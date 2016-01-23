@@ -15,7 +15,6 @@ from what you see with CNNs/MLPs/etc.
 GPU command:
     THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32 python imdb_lstm.py
 '''
-
 from __future__ import print_function
 import numpy as np
 np.random.seed(1337)  # for reproducibility
@@ -96,14 +95,15 @@ model.compile(loss='binary_crossentropy',
 
 
 print("Train...")
-model.fit(X_train, y_train, batch_size=batch_size, nb_epoch=100,
-          validation_data=(X_test, y_test), show_accuracy=True)
+model.fit(X_train, y_train, batch_size=batch_size, nb_epoch=10,
+          validation_data=(X_test, y_test), show_accuracy=True, verbose=1)
 score, acc = model.evaluate(X_test, y_test,
                             batch_size=batch_size,
                             show_accuracy=True)
 
 
-model.save_weights('my_model_dbc_1.h5')
+#model.save_weights('my_model_dbc_shrt.h5')
+print(model.to_yaml())
 
 print('Test score:', score)
 print('Test accuracy:', acc)
