@@ -10,8 +10,9 @@ import sklearn.cross_validation as crossval
 DIR_MODELS = "models/"
 
 class PredictorModel:
-    def __init__(self, model_name):
+    def __init__(self, model_name, model_type=""):
         self.model_name = model_name
+        self.model_type = model_type
         self.days_seq = 20
         pass
 
@@ -28,6 +29,8 @@ class PredictorModel:
             self.last_day = model_description["last_day"]
             self.batch_size = model_description["batch_size"]
             self.nb_epoch = model_description["nb_epoch"]
+            self.model_type = model_description["model_type"]
+            self.description = model_description["description"]
             return True
 
         return False
@@ -44,7 +47,9 @@ class PredictorModel:
             "csv_id": self.csv_id,
             "last_day": self.last_day,
             "batch_size": self.batch_size,
-            "nb_epoch": self.nb_epoch
+            "nb_epoch": self.nb_epoch,
+            "model_type": self.model_type,
+            "description": self.description
         }
         yaml.dump(model_description, stream)
 

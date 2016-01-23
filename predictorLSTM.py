@@ -7,14 +7,16 @@ from keras.layers.recurrent import LSTM
 
 class PredictorLSTM(PredictorModel):
     def __init__(self, model_name):
-        PredictorModel.__init__(self, model_name)
+        PredictorModel.__init__(self, model_name, model_type="PredictorLSTM")
 
-    def createModel(self, csv_id):
+    def createModel(self, csv_id, desc=""):
         self.csv_id = csv_id
         self.last_day = None
         self.batch_size = 32
         self.nb_epoch = 1000
         max_features = 5000
+
+        self.description = desc
 
         self.model = Sequential()
         self.model.add(Embedding(max_features, 128, input_length=self.days_seq))
