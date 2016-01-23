@@ -1,18 +1,18 @@
 import numpy
 from datetime import datetime
-
+import os.path
+import urllib
 #
 
 def isStockInCache(id):
-    # TODO: check if csvdata has file csvdata/#id#.csv?
+	if os.path.isfile("csvdata/"+id+".csv")
+		return True
     return False
 
 def getStockData(id, force_update=False):
-    # TODO: if not isStockInCache(id) or force_update - download to file csvdata/#id#.csv
-    # TODO: if stooq doesn't have data - go ahead, throw exception!
-    # http://stooq.pl/q/d/l/?s=eur&i=d
-    # Where eur needs to be replaced by id
-    return numpy.recfromcsv('dbc_d.csv', delimiter=',')
+	if not isStockInCache(id) or force_update:
+		urllib.urlretrieve("http://stooq.pl/q/d/l/?s="+id+"&i=d", "csvdata/"+id+".csv")	
+    return numpy.recfromcsv("csvdata/"+id+".csv", delimiter=',')
 
 # Nothing to do!
 def getLastDayFromStock(stockData):
