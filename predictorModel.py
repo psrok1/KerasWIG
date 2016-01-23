@@ -5,6 +5,7 @@ import yaml
 import csvmgr
 import numpy
 from math import floor
+from datetime import datetime, timedelta
 import sklearn.cross_validation as crossval
 
 DIR_MODELS = "models/"
@@ -14,6 +15,7 @@ class PredictorModel:
         self.model_name = model_name
         self.model_type = model_type
         self.days_seq = 20
+        self.last_day = None
         pass
 
     def loadModel(self):
@@ -39,37 +41,61 @@ class PredictorModel:
         global DIR_MODELS
 
         model_yaml = self.model.to_yaml()
-        open(DIR_MODELS+self.model_name+"_m.yml").write(model_yaml)
-        self.model.save_weights(DIR_MODELS+self.model_name+'.h5')
+        open(DIR_MODELS+self.model_name+"_m.yml", "w").write(model_yaml)
+        self.model.save_weights(DIR_MODELS+self.model_name+'.h5', overwrite=True)
 
         stream = file(DIR_MODELS+self.model_name+'.yml', 'w')
-        model_description = {
-            "csv_id": self.csv_id,
-            "last_day": self.last_day,
-            "batch_size": self.batch_size,
-            "nb_epoch": self.nb_epoch,
-            "model_type": self.model_type,
-            "description": self.description
-        }
-        yaml.dump(model_description, stream)
+        model_description = dict(
+            csv_id = str(self.csv_id),
+            last_day = str(self.last_day),
+            batch_size = self.batch_size,
+            nb_epoch = self.nb_epoch,
+            model_type = str(self.model_type),
+            description = str(self.description)
+        )
+        print model_description
+        desc_yaml = yaml.dump(model_description, default_flow_style=True)
+        open(DIR_MODELS+self.model_name+".yml", "w").write(desc_yaml)
 
-    def __getStockData(self):
+    def __getStockData(self, from_date=None, to_date=None, fresh=False):
         maxlen = self.days_seq
-        stockData = None   # get stock data
-        stockValues = None # zamkniecie
+        stockData = csvmgr.getStockData(self.csv_id, force_update=fresh)
+
+        if from_date is None:
+            from_date = csvmgr.stockDayToDatetime(csvmgr.getFirstDayFromStock(stockData))
+        if to_date is None:
+            to_date = csvmgr.stockDayToDatetime(csvmgr.getLastDayFromStock(stockData))
+
+        if (to_date-from_date) <= timedelta(maxlen):
+            from_date -= timedelta(maxlen+20)
+
+        stockData = csvmgr.filterStockData(stockData, from_date, to_date)
+
+        print "Getting stock data from "+csvmgr.getFirstDayFromStock(stockData) + " to " + csvmgr.getLastDayFromStock(stockData)
+
+        stockValues = csvmgr.getPricesFromStock(stockData)
 
         x_data = numpy.array([stockValues[i:i+maxlen] for i in xrange(len(stockValues)-maxlen)])
         y_data = numpy.array([floor(stockValues[i]/stockValues[i-1]) for i in xrange(maxlen,len(stockValues))])
 
-        x_train, x_test, y_train, y_test = crossval.train_test_split(x_data, y_data, test_size=0.2, random_state=0)
+        x_train = numpy.array(x_data[0:len(x_data)*7/10])
+        y_train = numpy.array(y_data[0:len(y_data)*7/10])
 
-        x_train = sequence.pad_sequences(x_train, maxlen=maxlen)
-        x_test = sequence.pad_sequences(x_test, maxlen=maxlen)
+        x_test = numpy.array(x_data[len(x_data)*7/10:])
+        y_test = numpy.array(y_data[len(y_data)*7/10:])
 
-        return x_train, x_test, y_train, y_test
+        return stockData, x_train, x_test, y_train, y_test
 
-    def feedWithStockData(self):
-        x_train, x_test, y_train, y_test = self.__getStockData()
+    def feedWithStockData(self, limit_date = None, fresh = False):
+        if self.last_day is None:
+            stockData, x_train, x_test, y_train, y_test = self.__getStockData(to_date = limit_date, fresh=fresh)
+        else:
+            last_date = csvmgr.stockDayToDatetime(self.last_day)
+            last_date += timedelta(1)
+            stockData, x_train, x_test, y_train, y_test = self.__getStockData(from_date = last_date, to_date = limit_date, fresh=fresh)
 
+        print "Fitting..."
         self.model.fit(x_train, y_train, batch_size=self.batch_size, nb_epoch=self.nb_epoch,
-                        validation_data=(x_test, y_test), show_accuracy=True)
+                        show_accuracy=True)
+
+        self.last_day = csvmgr.getLastDayFromStock(stockData)
