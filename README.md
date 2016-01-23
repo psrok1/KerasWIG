@@ -1,0 +1,2 @@
+# KerasWIG
+Kiedyś będziemy bogaci.
