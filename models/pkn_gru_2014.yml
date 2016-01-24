@@ -1,0 +1,2 @@
+{batch_size: 32, csv_id: pkn, description: PKN GRU partial model, last_day: '2014-01-02',
+  model_type: GRU, nb_epoch: 10}

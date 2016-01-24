@@ -1,2 +1,0 @@
-{batch_size: 32, csv_id: pzu, description: PZU LSTM complete model, last_day: '2016-01-22',
-  model_type: LSTM, nb_epoch: 10}

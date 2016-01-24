@@ -1,2 +1,2 @@
-{batch_size: 32, csv_id: pkn, description: PKN Orlen LSTM partial model, last_day: '2015-11-02',
+{batch_size: 32, csv_id: pkn, description: PKN LSTM partial model, last_day: '2015-11-02',
   model_type: LSTM, nb_epoch: 10}
