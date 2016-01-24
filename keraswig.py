@@ -1,11 +1,13 @@
 import argparse
 from predictorLSTM import *
+from predictorMLP import *
 from csvmgr import stockDayToDatetime
 import os.path
 import yaml
 
 predictors = {
-    "LSTM": PredictorLSTM
+    "LSTM": PredictorLSTM,
+    "MLP": PredictorMLP
 }
 
 def modelLoader(model_name, load_model=True):
@@ -52,6 +54,8 @@ args = parser.parse_args()
 
 if args.command == "create":
     model = predictors[args.type[0]](args.name[0])
+    if args.description == "":
+        args.description = args.name[0] + " model"
     model.createModel(args.stock_id[0], args.description[0])
     if args.limitdate != "":
         model.feedWithStockData(limit_date=stockDayToDatetime(args.limitdate))
