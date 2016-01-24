@@ -42,6 +42,9 @@ parser_update.add_argument("name", nargs=1, help="Name of used prediction model"
 parser_print = subparsers.add_parser("print", help="Print description of stock prediction model")
 parser_print.add_argument("name", nargs=1, help="Name of used prediction model")
 
+parser_test = subparsers.add_parser("test", help="Test model with data from stock")
+parser_test.add_argument("name", nargs=1, help="Name of used prediction model")
+parser_test.add_argument("--start-date", dest="startdate", nargs="?", type=str, help="Start date from stock. Date must be in format yyyy-mm-dd.", default=None)
 
 print("")
 
@@ -50,7 +53,10 @@ args = parser.parse_args()
 if args.command == "create":
     model = predictors[args.type[0]](args.name[0])
     model.createModel(args.stock_id[0], args.description[0])
-    model.feedWithStockData(limit_date=stockDayToDatetime(args.limitdate))
+    if args.limitdate != "":
+        model.feedWithStockData(limit_date=stockDayToDatetime(args.limitdate))
+    else:
+        model.feedWithStockData(fresh=True)
     model.saveModel()
 elif args.command == "update":
     model = modelLoader(args.name[0])
@@ -63,3 +69,12 @@ elif args.command == "print":
     model = modelLoader(args.name[0], load_model=False)
     if model is None:
         print "Model "+args.name[0]+" doesn't exist!"
+elif args.command == "test":
+    model = modelLoader(args.name[0])
+    if model is None:
+        print "Model "+args.name[0]+" doesn't exist!"
+    else:
+        if args.startdate is None:
+            model.testWithStockData(fresh=True)
+        else:
+            model.testWithStockData(from_date = stockDayToDatetime(args.startdate))

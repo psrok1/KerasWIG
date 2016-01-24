@@ -1,2 +1,2 @@
-{batch_size: 32, csv_id: pkn, description: MyFirstModel, last_day: '2016-01-22', model_type: LSTM,
+{batch_size: 32, csv_id: pkn, description: First model, last_day: '2016-01-22', model_type: LSTM,
   nb_epoch: 10}

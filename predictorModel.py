@@ -78,24 +78,32 @@ class PredictorModel:
         x_data = numpy.array([stockValues[i:i+maxlen] for i in xrange(len(stockValues)-maxlen)])
         y_data = numpy.array([floor(stockValues[i]/stockValues[i-1]) for i in xrange(maxlen,len(stockValues))])
 
-        x_train = numpy.array(x_data[0:len(x_data)*7/10])
-        y_train = numpy.array(y_data[0:len(y_data)*7/10])
-
-        x_test = numpy.array(x_data[len(x_data)*7/10:])
-        y_test = numpy.array(y_data[len(y_data)*7/10:])
-
-        return stockData, x_train, x_test, y_train, y_test
+        return stockData, x_data, y_data
 
     def feedWithStockData(self, limit_date = None, fresh = False):
         if self.last_day is None:
-            stockData, x_train, x_test, y_train, y_test = self.__getStockData(to_date = limit_date, fresh=fresh)
+            stockData, x_data, y_data = self.__getStockData(to_date = limit_date, fresh=fresh)
         else:
             last_date = csvmgr.stockDayToDatetime(self.last_day)
             last_date += timedelta(1)
-            stockData, x_train, x_test, y_train, y_test = self.__getStockData(from_date = last_date, to_date = limit_date, fresh=fresh)
+            stockData, x_data, y_data = self.__getStockData(from_date = last_date, to_date = limit_date, fresh=fresh)
 
         print "Fitting..."
-        self.model.fit(x_train, y_train, batch_size=self.batch_size, nb_epoch=self.nb_epoch,
+        self.model.fit(x_data, y_data, batch_size=self.batch_size, nb_epoch=self.nb_epoch,
                         show_accuracy=True)
 
         self.last_day = csvmgr.getLastDayFromStock(stockData)
+
+    def testWithStockData(self, from_date = None, fresh = False):
+        if self.last_day is None:
+            print "No data in model!"
+            return
+
+        stockData, x_data, y_data = self.__getStockData(from_date = from_date, fresh=fresh)
+
+        print "Testing..."
+        score, acc = self.model.evaluate(x_data, y_data,
+                            batch_size=self.batch_size,
+                            show_accuracy=True)
+        print "Score: "+str(score)
+        print "Accuracy: "+str(acc)
