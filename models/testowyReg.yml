@@ -1,0 +1,2 @@
+{batch_size: 32, csv_id: pkn, description: testowyReg model, last_day: '2016-01-22',
+  model_type: Regular, nb_epoch: 10}

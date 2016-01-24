@@ -1,14 +1,8 @@
 import argparse
-from predictorLSTM import *
-from predictorMLP import *
 from csvmgr import stockDayToDatetime
 import os.path
 import yaml
-
-predictors = {
-    "LSTM": PredictorLSTM,
-    "MLP": PredictorMLP
-}
+from predictors import predictors
 
 def modelLoader(model_name, load_model=True):
     if os.path.isfile("models/"+model_name+'.yml'):
@@ -48,6 +42,10 @@ parser_test = subparsers.add_parser("test", help="Test model with data from stoc
 parser_test.add_argument("name", nargs=1, help="Name of used prediction model")
 parser_test.add_argument("--start-date", dest="startdate", nargs="?", type=str, help="Start date from stock. Date must be in format yyyy-mm-dd.", default=None)
 
+parser_predict = subparsers.add_parser("predict", help="Predict growth of stock prices")
+parser_predict.add_argument("name", nargs=1, help="Name of used prediction model")
+
+
 print("")
 
 args = parser.parse_args()
@@ -55,7 +53,7 @@ args = parser.parse_args()
 if args.command == "create":
     model = predictors[args.type[0]](args.name[0])
     if args.description == "":
-        args.description = args.name[0] + " model"
+        args.description = [args.name[0] + " model"]
     model.createModel(args.stock_id[0], args.description[0])
     if args.limitdate != "":
         model.feedWithStockData(limit_date=stockDayToDatetime(args.limitdate))
@@ -82,3 +80,9 @@ elif args.command == "test":
             model.testWithStockData(fresh=True)
         else:
             model.testWithStockData(from_date = stockDayToDatetime(args.startdate))
+elif args.command == "predict":
+    model = modelLoader(args.name[0])
+    if model is None:
+        print "Model "+args.name[0]+" doesn't exist!"
+    else:
+        model.predictNextValue()

@@ -1,4 +1,3 @@
-from keras.preprocessing import sequence
 from keras.models import model_from_yaml
 from os.path import isfile
 import yaml
@@ -6,14 +5,13 @@ import csvmgr
 import numpy
 from math import floor
 from datetime import datetime, timedelta
-import sklearn.cross_validation as crossval
 
 DIR_MODELS = "models/"
 
-class PredictorModel:
-    def __init__(self, model_name, model_type=""):
+class PredictorRegular:
+    def __init__(self, model_name):
         self.model_name = model_name
-        self.model_type = model_type
+        self.model_type = "Regular"
         self.days_seq = 20
         self.last_day = None
         pass
@@ -21,9 +19,6 @@ class PredictorModel:
     def loadModel(self):
         global DIR_MODELS
         if(isfile(DIR_MODELS+self.model_name+".yml")):
-            self.model = model_from_yaml(open(DIR_MODELS+self.model_name+'_m.yml').read())
-            self.model.load_weights(DIR_MODELS+self.model_name+'.h5')
-
             stream = file(DIR_MODELS+self.model_name+'.yml', 'r')
             model_description = yaml.load(stream)
 
@@ -39,10 +34,6 @@ class PredictorModel:
 
     def saveModel(self):
         global DIR_MODELS
-
-        model_yaml = self.model.to_yaml()
-        open(DIR_MODELS+self.model_name+"_m.yml", "w").write(model_yaml)
-        self.model.save_weights(DIR_MODELS+self.model_name+'.h5', overwrite=True)
 
         stream = file(DIR_MODELS+self.model_name+'.yml', 'w')
         model_description = dict(
@@ -89,9 +80,6 @@ class PredictorModel:
             stockData, x_data, y_data = self.__getStockData(from_date = last_date, to_date = limit_date, fresh=fresh)
 
         print "Fitting..."
-        self.model.fit(x_data, y_data, batch_size=self.batch_size, nb_epoch=self.nb_epoch,
-                        show_accuracy=True)
-
         self.last_day = csvmgr.getLastDayFromStock(stockData)
 
     def testWithStockData(self, from_date = None, fresh = False):
@@ -102,10 +90,24 @@ class PredictorModel:
         stockData, x_data, y_data = self.__getStockData(from_date = from_date, fresh=fresh)
 
         print "Testing..."
-        score, acc = self.model.evaluate(x_data, y_data,
-                            batch_size=self.batch_size,
-                            show_accuracy=True)
+        acc = 0.0
+        values = 0.0
+        for i in range(1,len(y_data)):
+            if y_data[i] == y_data[i-1]:
+                acc += 1.0
+            values += 1.0
+        acc /= values
+
         print "Accuracy: "+str(acc)
+
+    def createModel(self, csv_id, desc=""):
+        self.csv_id = csv_id
+        self.last_day = None
+        self.batch_size = 32
+        self.nb_epoch = 10
+        self.description = desc
+        max_features = 5000
+        print "Creating Regular model "+self.model_name+"..."
 
     def predictNextValue(self):
         if self.last_day is None:
@@ -114,5 +116,5 @@ class PredictorModel:
 
         stockData, x_data, y_data = self.__getStockData(to_date = csvmgr.stockDayToDatetime(self.last_day))
         print "Prediction: Value for "+self.csv_id+" will "\
-              +("increase" if self.model.predict_classes(x_data, batch_size=self.batch_size)[-1][0] else "decrease")
+              +("increase" if y_data[-1] else "decrease")
 

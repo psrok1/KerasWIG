@@ -101,6 +101,7 @@ score, acc = model.evaluate(X_test, y_test,
                             batch_size=batch_size,
                             show_accuracy=True)
 
+print(model.predict_classes(X_test, batch_size=batch_size))
 
 #model.save_weights('my_model_dbc_shrt.h5')
 print(model.to_yaml())
